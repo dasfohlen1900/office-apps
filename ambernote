@@ -1,0 +1,1879 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AmberNote</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23D97706'/%3E%3Cpath d='M7 4h7l4 4v12H7z' fill='none' stroke='white' stroke-width='1.6'/%3E%3Cpath d='M14 4v4h4' fill='none' stroke='white' stroke-width='1.6'/%3E%3Cline x1='9' y1='13' x2='15' y2='13' stroke='white' stroke-width='1.4'/%3E%3Cline x1='9' y1='16' x2='15' y2='16' stroke='white' stroke-width='1.4'/%3E%3C/svg%3E">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/index.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+:root{
+  --primary-color:#D97706; --primary-hover:#B45309; --primary-light:#FDE9CF;
+  --bg-app:#f3f2f1; --bg-ribbon:#f7f9fa; --bg-editor-area:#e6e6e6;
+  --border-color:#d1d1d1; --text-main:#333333;
+  --toolbar-btn-hover:#e1dfdd; --toolbar-btn-active:#c8c6c4;
+  --shadow-page:0 4px 12px rgba(0,0,0,0.15);
+  --excel-green:#217346; --excel-green-dark:#14532d; --excel-green-light:#e7f4ec;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;background:var(--bg-app);color:var(--text-main);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ===================== STARTSEITE ===================== */
+.start-screen{position:fixed;inset:0;background:linear-gradient(135deg,#fff 0%,#fdf3e4 100%);z-index:1200;display:flex;flex-direction:column;}
+.start-screen.hidden{display:none;}
+.start-header{display:flex;align-items:center;gap:12px;padding:26px 50px;}
+.start-header svg{width:34px;height:34px;color:var(--primary-color);}
+.start-header h1{font-size:24px;font-weight:600;color:#333;}
+.start-body{flex:1;display:flex;padding:0 50px 40px;gap:50px;overflow-y:auto;}
+.start-col{flex:1;}
+.start-col h2{font-size:15px;font-weight:600;color:#555;margin-bottom:16px;text-transform:uppercase;letter-spacing:.03em;}
+.start-new-tile{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;cursor:pointer;margin-bottom:12px;max-width:480px;transition:box-shadow .15s,border-color .15s;}
+.start-new-tile:hover{border-color:var(--primary-color);box-shadow:0 3px 10px rgba(217,118,6,.18);}
+.start-new-tile svg{width:28px;height:28px;color:var(--primary-color);flex-shrink:0;}
+.start-new-tile-title{font-size:14px;font-weight:600;color:#222;}
+.start-new-tile-desc{font-size:12px;color:#777;margin-top:2px;}
+.start-template-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;max-width:620px;}
+.start-template-card{border:1px solid var(--border-color);border-radius:8px;padding:16px 10px;cursor:pointer;text-align:center;background:#fff;transition:.15s;}
+.start-template-card:hover{border-color:var(--primary-color);box-shadow:0 3px 10px rgba(217,118,6,.18);transform:translateY(-2px);}
+.start-template-card svg{width:26px;height:26px;color:var(--primary-color);margin-bottom:8px;}
+.start-template-card-name{font-size:12px;font-weight:600;color:#333;}
+.start-recent-list{max-width:480px;}
+.start-recent-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:#444;}
+.start-recent-item:hover{background:var(--primary-light);}
+.start-recent-item svg{width:18px;height:18px;color:var(--primary-color);flex-shrink:0;}
+.start-recent-empty{font-size:13px;color:#999;padding:10px 0;}
+.start-open-btn{display:flex;align-items:center;gap:10px;background:var(--primary-color);color:#fff;border:none;border-radius:6px;padding:10px 18px;font-size:13px;cursor:pointer;margin-top:16px;}
+.start-open-btn:hover{background:var(--primary-hover);}
+.start-open-btn svg{width:16px;height:16px;}
+
+/* ===================== HEADER ===================== */
+.app-header{background:var(--primary-color);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:6px 16px;height:40px;flex-shrink:0;}
+.app-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.doc-title-input{background:transparent;border:1px solid transparent;color:#fff;font-size:14px;font-weight:500;padding:2px 6px;border-radius:3px;outline:none;transition:.2s;}
+.doc-title-input:hover,.doc-title-input:focus{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);}
+.header-actions{display:flex;align-items:center;gap:8px;}
+.header-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:5px;}
+.header-btn:hover{background:rgba(255,255,255,.25);}
+.header-btn svg{width:13px;height:13px;}
+.header-btn.spellcheck-off{opacity:.55;}
+
+/* ===================== RIBBON ===================== */
+.ribbon{background:var(--bg-ribbon);border-bottom:1px solid var(--border-color);box-shadow:0 2px 4px rgba(0,0,0,.04);user-select:none;flex-shrink:0;}
+.ribbon-tabs{display:flex;background:var(--primary-color);padding-left:10px;}
+.ribbon-tab{padding:6px 16px;color:#fff;font-size:13px;cursor:pointer;border-top-left-radius:4px;border-top-right-radius:4px;opacity:.85;transition:.15s;}
+.ribbon-tab:hover{opacity:1;background:rgba(255,255,255,.12);}
+.ribbon-tab.active{background:var(--bg-ribbon);color:var(--primary-color);font-weight:600;opacity:1;}
+.ribbon-tab.file-tab{font-style:italic;}
+.ribbon-content{display:none;align-items:center;padding:6px 12px;gap:16px;height:65px;overflow-x:auto;}
+.ribbon-content.active{display:flex;}
+.ribbon-group{display:flex;align-items:center;gap:4px;position:relative;padding-right:10px;}
+.ribbon-group:not(:last-child)::after{content:"";position:absolute;right:-2px;top:10%;height:80%;width:1px;background:var(--border-color);}
+.btn{background:transparent;border:1px solid transparent;border-radius:3px;padding:6px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;color:var(--text-main);transition:.15s;}
+.btn:hover{background:var(--toolbar-btn-hover);border-color:var(--border-color);}
+.btn:active,.btn.active{background:var(--toolbar-btn-active);border-color:#a19f9d;}
+.btn-inline{flex-direction:row;padding:6px;}
+.btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.btn-large svg{width:22px;height:22px;}
+select,input[type=color]{font-family:inherit;font-size:12px;padding:5px 6px;border:1px solid var(--border-color);border-radius:3px;background:#fff;color:var(--text-main);cursor:pointer;outline:none;}
+select:hover{border-color:var(--primary-color);}
+#font-size{width:55px;}
+#font{width:165px;}
+input[type=color]{width:32px;height:32px;padding:2px;}
+
+/* ===================== WORKSPACE / MULTI-PAGE ===================== */
+.workspace{flex:1;background:var(--bg-editor-area);overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:30px 15px 100px;gap:24px;}
+.document-page{background:#fff;width:100%;max-width:800px;min-height:1050px;padding:60px 70px;box-shadow:var(--shadow-page);border-radius:2px;outline:none;font-family:'Calibri','Segoe UI',sans-serif;font-size:15px;line-height:1.6;color:#111;position:relative;}
+.document-page:focus{border:1px solid rgba(217,118,6,.3);}
+.page-number-tag{position:absolute;bottom:-22px;right:6px;font-size:11px;color:#888;}
+.add-page-btn{width:54px;height:54px;border-radius:50%;background:var(--primary-color);color:#fff;border:none;box-shadow:0 3px 10px rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;position:fixed;bottom:52px;right:34px;z-index:50;}
+.add-page-btn:hover{background:var(--primary-hover);}
+.add-page-btn svg{width:26px;height:26px;}
+
+/* Bilder + Resize Handles */
+.img-wrap{position:relative;display:inline-block;}
+.img-wrap.selected{outline:2px solid var(--primary-color);}
+.img-wrap img{display:block;max-width:100%;}
+.resize-handle{position:absolute;width:11px;height:11px;background:var(--primary-color);border:1px solid #fff;border-radius:50%;display:none;}
+.img-wrap.selected .resize-handle{display:block;}
+.resize-handle.br{right:-6px;bottom:-6px;cursor:nwse-resize;}
+.resize-handle.bl{left:-6px;bottom:-6px;cursor:nesw-resize;}
+.resize-handle.tr{right:-6px;top:-6px;cursor:nesw-resize;}
+.resize-handle.tl{left:-6px;top:-6px;cursor:nwse-resize;}
+
+/* Rechtschreibprüfung */
+.spell-error{text-decoration:underline wavy #e11d48;text-decoration-skip-ink:none;cursor:context-menu;}
+.spell-menu{position:fixed;background:#fff;border:1px solid var(--border-color);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:2000;min-width:180px;padding:4px 0;font-size:13px;}
+.spell-menu-item{padding:8px 14px;cursor:pointer;}
+.spell-menu-item:hover{background:var(--primary-light);}
+.spell-menu-sep{height:1px;background:var(--border-color);margin:4px 0;}
+
+/* ===================== STATUS BAR ===================== */
+.status-bar{background:var(--primary-color);color:#fff;font-size:12px;padding:4px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.status-info{display:flex;gap:16px;align-items:center;}
+.status-info button{background:none;border:none;color:#fff;font-size:12px;cursor:pointer;text-decoration:underline;padding:0;}
+#file-input,#img-file-input{display:none;}
+
+/* ===================== BACKSTAGE ===================== */
+.backstage-overlay{position:fixed;inset:0;background:#fff;z-index:999;display:none;}
+.backstage-overlay.open{display:flex;}
+.backstage-nav{width:230px;background:var(--primary-color);color:#fff;display:flex;flex-direction:column;padding-top:20px;flex-shrink:0;}
+.backstage-nav-item{padding:12px 24px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-left:4px solid transparent;}
+.backstage-nav-item:hover{background:rgba(255,255,255,.12);}
+.backstage-nav-item.active{background:rgba(255,255,255,.2);border-left-color:#fff;font-weight:600;}
+.backstage-nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.backstage-close{margin-top:auto;padding:14px 24px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;border-top:1px solid rgba(255,255,255,.2);}
+.backstage-close:hover{background:rgba(255,255,255,.12);}
+.backstage-panel{flex:1;padding:40px 60px;overflow-y:auto;}
+.backstage-panel h2{font-size:24px;font-weight:400;color:#333;margin-bottom:24px;border-bottom:1px solid var(--border-color);padding-bottom:14px;}
+.backstage-section{display:none;}
+.backstage-section.active{display:block;}
+.backstage-tile{display:flex;align-items:center;gap:16px;padding:14px 16px;border-radius:4px;cursor:pointer;max-width:420px;transition:background .15s;}
+.backstage-tile:hover{background:var(--primary-light);}
+.backstage-tile svg{width:30px;height:30px;color:var(--primary-color);flex-shrink:0;}
+.backstage-tile-title{font-size:15px;font-weight:600;color:#222;}
+.backstage-tile-desc{font-size:12px;color:#666;margin-top:2px;}
+.meta-table{border-collapse:collapse;max-width:520px;}
+.meta-table td{padding:10px 14px;border-bottom:1px solid var(--border-color);font-size:13px;}
+.meta-table td:first-child{color:#666;width:190px;}
+.meta-table td:last-child{font-weight:600;color:#222;}
+.template-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:700px;margin-top:10px;}
+.template-card{border:1px solid var(--border-color);border-radius:4px;padding:14px 10px;cursor:pointer;text-align:center;background:#fafafa;transition:.15s;}
+.template-card:hover{border-color:var(--primary-color);box-shadow:0 2px 6px rgba(217,118,6,.2);}
+.template-card svg{width:26px;height:26px;color:var(--primary-color);margin-bottom:6px;}
+.template-card-name{font-size:12px;font-weight:600;color:#333;}
+.backstage-btn{background:var(--primary-color);color:#fff;border:none;padding:10px 20px;border-radius:4px;font-size:13px;cursor:pointer;margin-top:18px;}
+.backstage-btn:hover{background:var(--primary-hover);}
+.export-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;}
+.export-tile{display:flex;align-items:center;gap:14px;background:#fafafa;border:1px solid var(--border-color);border-radius:6px;padding:14px 18px;cursor:pointer;width:260px;transition:.15s;}
+.export-tile:hover{border-color:var(--primary-color);box-shadow:0 2px 8px rgba(217,118,6,.18);}
+.export-tile svg{width:26px;height:26px;color:var(--primary-color);flex-shrink:0;}
+
+/* ===================== EXCEL-ARTIGES TABELLEN-FENSTER ===================== */
+.excel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1500;display:none;align-items:center;justify-content:center;}
+.excel-overlay.open{display:flex;}
+.excel-window{background:#fff;width:90%;max-width:900px;height:80%;max-height:640px;border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,.4);display:flex;flex-direction:column;overflow:hidden;}
+.excel-titlebar{background:var(--excel-green);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;}
+.excel-titlebar-left{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;}
+.excel-titlebar-left svg{width:18px;height:18px;}
+.excel-close{background:none;border:none;color:#fff;cursor:pointer;padding:4px;}
+.excel-close svg{width:18px;height:18px;}
+.excel-toolbar{background:var(--excel-green-light);padding:8px 14px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #c8e2d0;}
+.excel-toolbar button{background:#fff;border:1px solid var(--excel-green);color:var(--excel-green-dark);border-radius:3px;padding:5px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;}
+.excel-toolbar button:hover{background:var(--excel-green);color:#fff;}
+.excel-toolbar button svg{width:13px;height:13px;}
+.excel-grid-wrap{flex:1;overflow:auto;padding:10px;}
+.excel-grid{border-collapse:collapse;}
+.excel-grid td,.excel-grid th{border:1px solid #c8e2d0;padding:0;}
+.excel-grid th{background:var(--excel-green);color:#fff;font-size:11px;font-weight:600;width:34px;height:24px;text-align:center;position:sticky;top:0;}
+.excel-grid td.rowhead{background:var(--excel-green);color:#fff;font-size:11px;font-weight:600;text-align:center;width:34px;position:sticky;left:0;}
+.excel-grid td input{border:none;outline:none;width:90px;height:26px;padding:2px 6px;font-size:12px;font-family:'Calibri',sans-serif;}
+.excel-grid td input:focus{background:#fffbe6;box-shadow:inset 0 0 0 2px var(--excel-green);}
+.excel-footer{padding:10px 16px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:10px;}
+.excel-footer button{padding:8px 18px;border-radius:4px;font-size:13px;cursor:pointer;border:1px solid var(--border-color);background:#fff;}
+.excel-footer .primary{background:var(--excel-green);color:#fff;border-color:var(--excel-green);}
+.excel-footer .primary:hover{background:var(--excel-green-dark);}
+
+/* Tabelle im Dokument (nur Anzeige, nicht editierbar) */
+.doc-table{border-collapse:collapse;margin:10px 0;cursor:pointer;}
+.doc-table:hover{outline:2px solid var(--excel-green);}
+.doc-table td{border:1px solid #999;padding:6px 12px;min-width:40px;font-size:13px;}
+
+/* Shortcuts-Hilfe */
+.shortcuts-list{max-width:520px;}
+.shortcuts-list tr td:first-child{font-family:Consolas,monospace;background:#f2f2f2;border-radius:3px;padding:4px 8px;font-size:12px;}
+
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:#c8c6c4;border-radius:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- STARTSEITE                                                    -->
+<!-- ============================================================ -->
+<div class="start-screen" id="start-screen">
+  <div class="start-header">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+    <h1>AmberNote</h1>
+  </div>
+  <div class="start-body">
+    <div class="start-col">
+      <h2>Neu erstellen</h2>
+      <div class="start-new-tile" id="start-new-blank">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+        <div>
+          <div class="start-new-tile-title">Leeres Dokument</div>
+          <div class="start-new-tile-desc">Neues, leeres Dokument im DIN-A4-Format erstellen</div>
+        </div>
+      </div>
+      <button class="start-open-btn" id="start-open-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        Datei öffnen (.note)
+      </button>
+      <h2 style="margin-top:32px;">Vorlagen</h2>
+      <div class="start-template-grid" id="start-template-grid"></div>
+    </div>
+    <div class="start-col" style="max-width:340px;">
+      <h2>Zuletzt verwendet</h2>
+      <div class="start-recent-list" id="start-recent-list">
+        <div class="start-recent-empty">Noch keine Dokumente gespeichert.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- App Header -->
+<header class="app-header">
+  <div class="app-title">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+      <line x1="16" y1="13" x2="8" y2="13"></line>
+      <line x1="16" y1="17" x2="8" y2="17"></line>
+    </svg>
+    <span>AmberNote -</span>
+    <input type="text" id="document-title" class="doc-title-input" value="Unbenanntes Dokument.note">
+  </div>
+  <div class="header-actions">
+    <button class="header-btn" id="btn-home" title="Zur Startseite">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7"></path><path d="M9 22V12h6v10"></path><path d="M5 10v10a1 1 0 0 0 1 1h3m10-11v10a1 1 0 0 1-1 1h-3"></path></svg>
+      Start
+    </button>
+    <button class="header-btn" id="btn-spellcheck-toggle" title="Rechtschreibprüfung ein/aus">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20l-2-2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5z"></path><path d="M8 10h.01M12 10h.01M16 10h.01"></path></svg>
+      Rechtschreibung
+    </button>
+    <button class="header-btn" id="btn-local-font" title="Lokale Schriftarten laden (Local Font Access API)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"></path><path d="M6 16 10.5 4h1L16 16"></path><path d="M7.5 12h5"></path></svg>
+      Schriftarten
+    </button>
+  </div>
+</header>
+
+<!-- Ribbon Toolbar -->
+<div class="ribbon">
+  <div class="ribbon-tabs">
+    <div class="ribbon-tab file-tab" data-tab="file"><i>Datei</i></div>
+    <div class="ribbon-tab active" data-tab="start">Start</div>
+    <div class="ribbon-tab" data-tab="insert">Einfügen</div>
+    <div class="ribbon-tab" data-tab="layout">Layout</div>
+    <div class="ribbon-tab" data-tab="view">Ansicht</div>
+  </div>
+
+  <!-- START TAB -->
+  <div class="ribbon-content active" data-panel="start">
+    <div class="ribbon-group">
+      <button class="btn btn-large" id="btn-new" title="Neues Dokument">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+        Neu
+      </button>
+      <button class="btn btn-large" id="btn-open" title="Dokument Öffnen (.note)">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        Öffnen
+      </button>
+      <button class="btn btn-large" id="btn-save" title="Dokument Speichern (Strg+S)">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        Speichern
+      </button>
+      <button class="btn btn-large" id="btn-print" title="Drucken (Strg+P)">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        Drucken
+      </button>
+    </div>
+
+    <div class="ribbon-group">
+      <select id="font" title="Schriftart">
+        <option>Calibri</option>
+        <option>Arial</option>
+        <option>Comic Sans MS</option>
+        <option>Consolas</option>
+        <option>Franklin Gothic Medium</option>
+        <option>Georgia</option>
+        <option>Impact</option>
+        <option>Noto Sans</option>
+        <option>Noto Serif</option>
+        <option>Tahoma</option>
+        <option>Times New Roman</option>
+        <option>Verdana</option>
+        <option>Trebuchet MS</option>
+      </select>
+      <select id="font-size" title="Schriftgröße">
+        <option>8</option><option>9</option><option>10</option><option>11</option>
+        <option selected>12</option><option>14</option><option>16</option><option>18</option>
+        <option>20</option><option>22</option><option>24</option><option>28</option>
+        <option>32</option><option>36</option><option>48</option><option>72</option>
+      </select>
+      <input type="color" id="text-color" title="Textfarbe" value="#111111">
+      <input type="color" id="highlight-color" title="Texthervorhebung" value="#fff59d">
+    </div>
+
+    <div class="ribbon-group">
+      <button class="btn btn-inline" data-command="bold" title="Fett (Strg+B)">
+        <svg viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>
+      </button>
+      <button class="btn btn-inline" data-command="italic" title="Kursiv (Strg+I)">
+        <svg viewBox="0 0 24 24"><line x1="19" y1="4" x2="10" y2="4"></line><line x1="14" y1="20" x2="5" y2="20"></line><line x1="15" y1="4" x2="9" y2="20"></line></svg>
+      </button>
+      <button class="btn btn-inline" data-command="underline" title="Unterstrichen (Strg+U)">
+        <svg viewBox="0 0 24 24"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg>
+      </button>
+      <button class="btn btn-inline" data-command="strikeThrough" title="Durchgestrichen">
+        <svg viewBox="0 0 24 24"><path d="M17.3 4.9c-2.4-1.2-5.7-1-7.7.6-2.5 2-1.9 4.9-.4 6.5M4 12h16M7 16.5c1.4 1.8 4 2.5 6.4 2.2 2.7-.3 4.4-1.8 4.4-3.7"></path></svg>
+      </button>
+      <button class="btn btn-inline" id="btn-highlight" title="Markieren">
+        <svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path></svg>
+      </button>
+    </div>
+
+    <div class="ribbon-group">
+      <button class="btn btn-inline" data-command="justifyLeft" title="Linksbündig (Strg+L)">
+        <svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
+      </button>
+      <button class="btn btn-inline" data-command="justifyCenter" title="Zentriert (Strg+E)">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></svg>
+      </button>
+      <button class="btn btn-inline" data-command="justifyRight" title="Rechtsbündig (Strg+R)">
+        <svg viewBox="0 0 24 24"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
+      </button>
+      <button class="btn btn-inline" data-command="justifyFull" title="Blocksatz (Strg+J)">
+        <svg viewBox="0 0 24 24"><line x1="21" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="3" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <div class="ribbon-group">
+      <button class="btn btn-inline" data-command="insertUnorderedList" title="Aufzählung">
+        <svg viewBox="0 0 24 24"><line x1="11" y1="6" x2="21" y2="6"></line><line x1="11" y1="12" x2="21" y2="12"></line><line x1="11" y1="18" x2="21" y2="18"></line><circle cx="4" cy="6" r="2" fill="currentColor"></circle><circle cx="4" cy="12" r="2" fill="currentColor"></circle><circle cx="4" cy="18" r="2" fill="currentColor"></circle></svg>
+      </button>
+      <button class="btn btn-inline" data-command="insertOrderedList" title="Nummerierte Liste">
+        <svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h2v-4"></path><path d="M4 10h3v4H4z"></path></svg>
+      </button>
+      <button class="btn btn-inline" id="btn-undo" title="Rückgängig (Strg+Z)">
+        <svg viewBox="0 0 24 24"><path d="M3 7v6h6"></path><path d="M3 13a9 9 0 1 0 3-7"></path></svg>
+      </button>
+      <button class="btn btn-inline" id="btn-redo" title="Wiederholen (Strg+Y)">
+        <svg viewBox="0 0 24 24"><path d="M21 7v6h-6"></path><path d="M21 13a9 9 0 1 1-3-7"></path></svg>
+      </button>
+    </div>
+
+    <div class="ribbon-group">
+      <select id="note-type-select" class="note-type-select" title="Notiztyp / Vorlage">
+        <option value="">Notiztyp wählen...</option>
+        <option value="leer">Leeres Dokument</option>
+        <option value="meeting">Besprechungsprotokoll</option>
+        <option value="todo">To-Do-Liste</option>
+        <option value="tagebuch">Tagebucheintrag</option>
+        <option value="rezept">Rezept</option>
+        <option value="brainstorm">Brainstorming</option>
+        <option value="brief">Geschäftsbrief</option>
+        <option value="lebenslauf">Lebenslauf</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- INSERT TAB -->
+  <div class="ribbon-content" data-panel="insert">
+    <div class="ribbon-group">
+      <button class="btn btn-large" id="btn-insert-page" title="Neue Seite (Strg+Enter)">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="12" x2="12" y2="18"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+        Seite
+      </button>
+      <button class="btn btn-large" data-command="insertHorizontalRule" title="Trennlinie einfügen">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line></svg>
+        Trennlinie
+      </button>
+      <button class="btn btn-large" id="btn-insert-table" title="Tabelle einfügen (Excel-artig)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+        Tabelle
+      </button>
+      <button class="btn btn-large" id="btn-insert-link" title="Link einfügen">
+        <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.5 1.5"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.5-1.5"></path></svg>
+        Link
+      </button>
+    </div>
+    <div class="ribbon-group">
+      <button class="btn btn-large" id="btn-insert-date" title="Datum einfügen">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        Datum
+      </button>
+      <button class="btn btn-large" id="btn-insert-checkbox" title="Checkbox einfügen">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><polyline points="8 12 11 15 16 9"></polyline></svg>
+        Checkbox
+      </button>
+      <button class="btn btn-large" id="btn-insert-image-file" title="Bild von Gerät einfügen">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        Bild
+      </button>
+      <button class="btn btn-large" id="btn-insert-pagebreak" title="Seitenumbruch">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="12" x2="20" y2="12" stroke-dasharray="3 3"></line><polyline points="8 8 4 12 8 16"></polyline><polyline points="16 8 20 12 16 16"></polyline></svg>
+        Umbruch
+      </button>
+    </div>
+  </div>
+
+  <!-- LAYOUT TAB -->
+  <div class="ribbon-content" data-panel="layout">
+    <div class="ribbon-group">
+      <button class="btn btn-large" id="btn-margin-narrow" title="Schmale Ränder">
+        <svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="1"></rect></svg>
+        Schmal
+      </button>
+      <button class="btn btn-large" id="btn-margin-normal" title="Normale Ränder">
+        <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"></rect></svg>
+        Normal
+      </button>
+      <button class="btn btn-large" id="btn-margin-wide" title="Breite Ränder">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="1"></rect></svg>
+        Breit
+      </button>
+    </div>
+    <div class="ribbon-group">
+      <button class="btn btn-large" id="btn-linespacing-1" title="Einfacher Zeilenabstand">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+        1.0
+      </button>
+      <button class="btn btn-large" id="btn-linespacing-15" title="1,5-facher Zeilenabstand">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="5" x2="20" y2="5"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="19" x2="20" y2="19"></line></svg>
+        1.5
+      </button>
+      <button class="btn btn-large" id="btn-linespacing-2" title="Doppelter Zeilenabstand">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="4" x2="20" y2="4"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="20" x2="20" y2="20"></line></svg>
+        2.0
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW TAB -->
+  <div class="ribbon-content" data-panel="view">
+    <div class="ribbon-group">
+      <button class="btn btn-large" id="btn-zoom-out" title="Verkleinern">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+        Verkleinern
+      </button>
+      <button class="btn btn-large" id="btn-zoom-reset" title="Zoom zurücksetzen">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        100%
+      </button>
+      <button class="btn btn-large" id="btn-zoom-in" title="Vergrößern">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+        Vergrößern
+      </button>
+    </div>
+    <div class="ribbon-group">
+      <button class="btn btn-large" id="btn-toggle-dark" title="Dunkler Editorbereich">
+        <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"></path></svg>
+        Dunkel
+      </button>
+      <button class="btn btn-large" id="btn-show-shortcuts" title="Tastenkombinationen anzeigen">
+        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="6" y1="9" x2="6" y2="9.01"></line><line x1="10" y1="9" x2="10" y2="9.01"></line><line x1="14" y1="9" x2="14" y2="9.01"></line><line x1="18" y1="9" x2="18" y2="9.01"></line><line x1="6" y1="13" x2="18" y2="13"></line></svg>
+        Shortcuts
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Workspace / Editor Canvas (Mehrseiten-Container) -->
+<main class="workspace" id="workspace"></main>
+<button class="add-page-btn" id="btn-add-page-float" title="Neue Seite hinzufügen">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+
+<!-- Status Bar -->
+<footer class="status-bar">
+  <div class="status-info">
+    <span id="word-count">Wörter: 0</span>
+    <span id="char-count">Zeichen: 0</span>
+    <span id="page-count">Seiten: 1</span>
+    <span id="note-type-info">Typ: Leer</span>
+    <button id="btn-status-shortcuts">Tastenkombis</button>
+  </div>
+  <div id="status-message">Bereit</div>
+</footer>
+
+<input type="file" id="file-input" accept=".note,.json,.txt">
+<input type="file" id="img-file-input" accept="image/*">
+
+<!-- ============================================================ -->
+<!-- BACKSTAGE OVERLAY                                             -->
+<!-- ============================================================ -->
+<div class="backstage-overlay" id="backstage-overlay">
+  <div class="backstage-nav">
+    <div class="backstage-nav-item active" data-section="info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+      Informationen
+    </div>
+    <div class="backstage-nav-item" data-section="new">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+      Neu
+    </div>
+    <div class="backstage-nav-item" data-section="open">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+      Öffnen
+    </div>
+    <div class="backstage-nav-item" data-section="saveas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+      Speichern unter
+    </div>
+    <div class="backstage-nav-item" data-section="export">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Exportieren
+    </div>
+    <div class="backstage-close" id="backstage-close-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      Backstage schließen
+    </div>
+  </div>
+
+  <div class="backstage-panel">
+    <div class="backstage-section active" data-section-panel="info">
+      <h2>Informationen</h2>
+      <table class="meta-table">
+        <tr><td>Dateiname</td><td id="meta-filename">Unbenanntes Dokument.note</td></tr>
+        <tr><td>Notiztyp</td><td id="meta-notetype">Leer</td></tr>
+        <tr><td>Erstelldatum</td><td id="meta-created">–</td></tr>
+        <tr><td>Zuletzt bearbeitet</td><td id="meta-modified">–</td></tr>
+        <tr><td>Seitenanzahl</td><td id="meta-pages">1</td></tr>
+        <tr><td>Wortanzahl</td><td id="meta-words">0</td></tr>
+        <tr><td>Zeichenanzahl</td><td id="meta-chars">0</td></tr>
+      </table>
+    </div>
+
+    <div class="backstage-section" data-section-panel="new">
+      <h2>Neues Dokument</h2>
+      <div class="backstage-tile" id="backstage-new-blank">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        <div>
+          <div class="backstage-tile-title">Leeres Dokument</div>
+          <div class="backstage-tile-desc">Beginne mit einem komplett leeren Dokument</div>
+        </div>
+      </div>
+      <h2 style="margin-top:28px; font-size:18px;">Vorlagen</h2>
+      <div class="template-grid" id="backstage-template-grid"></div>
+    </div>
+
+    <div class="backstage-section" data-section-panel="open">
+      <h2>Öffnen</h2>
+      <div class="backstage-tile" id="backstage-open-tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        <div>
+          <div class="backstage-tile-title">Durchsuchen...</div>
+          <div class="backstage-tile-desc">Wähle eine .note-Datei von deinem Gerät</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="backstage-section" data-section-panel="saveas">
+      <h2>Speichern unter</h2>
+      <p style="font-size:13px; color:#555; margin-bottom:10px;">Dateiname:</p>
+      <input type="text" id="saveas-filename" style="padding:8px 10px; font-size:13px; border:1px solid var(--border-color); border-radius:4px; width:320px;" value="Unbenanntes Dokument.note">
+      <br>
+      <button class="backstage-btn" id="backstage-saveas-confirm">Als .note-Datei speichern</button>
+    </div>
+
+    <div class="backstage-section" data-section-panel="export">
+      <h2>Exportieren</h2>
+      <div class="export-row">
+        <div class="export-tile" id="export-pdf-tile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+          <div><div class="backstage-tile-title">Als PDF exportieren</div><div class="backstage-tile-desc">Alle Seiten als .pdf-Datei</div></div>
+        </div>
+        <div class="export-tile" id="export-docx-tile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+          <div><div class="backstage-tile-title">Als Word (.docx) exportieren</div><div class="backstage-tile-desc">Bearbeitbares Word-Dokument</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- EXCEL-ARTIGES TABELLEN-FENSTER                                -->
+<!-- ============================================================ -->
+<div class="excel-overlay" id="excel-overlay">
+  <div class="excel-window">
+    <div class="excel-titlebar">
+      <div class="excel-titlebar-left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+        Tabelle bearbeiten
+      </div>
+      <button class="excel-close" id="excel-close-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+    <div class="excel-toolbar">
+      <button id="excel-add-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Zeile</button>
+      <button id="excel-add-col"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Spalte</button>
+      <button id="excel-del-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>Zeile löschen</button>
+      <button id="excel-del-col"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>Spalte löschen</button>
+    </div>
+    <div class="excel-grid-wrap"><table class="excel-grid" id="excel-grid"></table></div>
+    <div class="excel-footer">
+      <button id="excel-cancel">Abbrechen</button>
+      <button class="primary" id="excel-apply">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+/* ================================================================ */
+/* ELEMENT REFERENCES                                                */
+/* ================================================================ */
+const startScreen = document.getElementById('start-screen');
+const docTitleInput = document.getElementById('document-title');
+const fileInput = document.getElementById('file-input');
+const imgFileInput = document.getElementById('img-file-input');
+const wordCountEl = document.getElementById('word-count');
+const charCountEl = document.getElementById('char-count');
+const pageCountEl = document.getElementById('page-count');
+const noteTypeInfoEl = document.getElementById('note-type-info');
+const statusMsgEl = document.getElementById('status-message');
+const workspace = document.getElementById('workspace');
+
+const fontSelect = document.getElementById('font');
+const fontSizeSelect = document.getElementById('font-size');
+const textColorInput = document.getElementById('text-color');
+const highlightColorInput = document.getElementById('highlight-color');
+const noteTypeSelect = document.getElementById('note-type-select');
+const btnLocalFont = document.getElementById('btn-local-font');
+const btnSpellToggle = document.getElementById('btn-spellcheck-toggle');
+
+const backstageOverlay = document.getElementById('backstage-overlay');
+const backstageCloseBtn = document.getElementById('backstage-close-btn');
+const backstageNavItems = document.querySelectorAll('.backstage-nav-item');
+const backstageSections = document.querySelectorAll('.backstage-section');
+
+const excelOverlay = document.getElementById('excel-overlay');
+const excelGrid = document.getElementById('excel-grid');
+
+/* ================================================================ */
+/* STATE                                                             */
+/* ================================================================ */
+let currentNoteType = '';
+let currentMetadata = { created: new Date().toISOString(), lastModified: new Date().toISOString() };
+let currentZoom = 100;
+let savedRange = null;
+let pageCounter = 0;
+let spellcheckEnabled = true;
+let activeTableForEdit = null;
+let activeImageWrap = null;
+const RECENT_KEY = 'ambernote_recent_docs';
+
+/* ================================================================ */
+/* NOTE TEMPLATES                                                    */
+/* ================================================================ */
+const noteTemplates = {
+  leer: { label: 'Leeres Dokument', html: '<p><br></p>' },
+  meeting: { label: 'Besprechungsprotokoll', html:
+    `<h2>Besprechungsprotokoll</h2>
+    <p><b>Datum:</b> ${new Date().toLocaleDateString('de-DE')}<br><b>Teilnehmer:</b> </p>
+    <p><b>Agenda</b></p>
+    <ol><li>Punkt 1</li><li>Punkt 2</li><li>Punkt 3</li></ol>
+    <p><b>Beschlüsse</b></p><ul><li></li></ul>
+    <p><b>Nächste Schritte</b></p><ul><li></li></ul>` },
+  todo: { label: 'To-Do-Liste', html:
+    `<h2>To-Do-Liste</h2><p><b>Datum:</b> ${new Date().toLocaleDateString('de-DE')}</p>
+    <ul><li>☐ Aufgabe 1</li><li>☐ Aufgabe 2</li><li>☐ Aufgabe 3</li></ul>` },
+  tagebuch: { label: 'Tagebucheintrag', html:
+    `<h2>Tagebucheintrag</h2><p><i>${new Date().toLocaleDateString('de-DE',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</i></p><p><br></p><p>Heute war...</p>` },
+  rezept: { label: 'Rezept', html:
+    `<h2>Rezeptname</h2><p><b>Portionen:</b> 4 &nbsp; <b>Zubereitungszeit:</b> 30 Min.</p>
+    <p><b>Zutaten</b></p><ul><li>Zutat 1</li><li>Zutat 2</li><li>Zutat 3</li></ul>
+    <p><b>Zubereitung</b></p><ol><li>Schritt 1</li><li>Schritt 2</li><li>Schritt 3</li></ol>` },
+  brainstorm: { label: 'Brainstorming', html:
+    `<h2>Brainstorming</h2><p><b>Thema:</b> </p><p><br></p><p><b>Ideen</b></p><ul><li></li><li></li><li></li></ul>` },
+  brief: { label: 'Geschäftsbrief', html:
+    `<p>Absender GmbH<br>Musterstraße 1<br>12345 Musterstadt</p><p><br></p>
+    <p>Empfänger GmbH<br>Musterstraße 2<br>54321 Musterstadt</p><p><br></p>
+    <p>${new Date().toLocaleDateString('de-DE')}</p><p><br></p>
+    <p><b>Betreff: </b></p><p><br></p><p>Sehr geehrte Damen und Herren,</p><p><br></p><p></p><p><br></p>
+    <p>Mit freundlichen Grüßen</p><p><br></p><p></p>` },
+  lebenslauf: { label: 'Lebenslauf', html:
+    `<h2>Lebenslauf</h2><p><b>Name:</b> <br><b>Adresse:</b> <br><b>E-Mail:</b> <br><b>Telefon:</b> </p><p><br></p>
+    <p><b>Berufserfahrung</b></p><ul><li></li></ul>
+    <p><b>Ausbildung</b></p><ul><li></li></ul>
+    <p><b>Kenntnisse</b></p><ul><li></li></ul>` }
+};
+
+const templateIcons = {
+  leer: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>',
+  meeting: '<circle cx="9" cy="7" r="4"></circle><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"></path>',
+  todo: '<rect x="3" y="3" width="18" height="18" rx="2"></rect><polyline points="8 12 11 15 16 9"></polyline>',
+  tagebuch: '<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>',
+  rezept: '<path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"></path>',
+  brainstorm: '<path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"></path>',
+  brief: '<path d="M4 4h16v16H4z"></path><polyline points="4 4 12 13 20 4"></polyline>',
+  lebenslauf: '<rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="7" x2="16" y2="7"></line><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="13" y2="15"></line>'
+};
+
+/* Vorlagen-Kacheln generieren (Startseite + Backstage) */
+function buildTemplateGrids() {
+  const startGrid = document.getElementById('start-template-grid');
+  const backstageGrid = document.getElementById('backstage-template-grid');
+  Object.keys(noteTemplates).forEach(key => {
+    if (key === 'leer') return;
+    const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${templateIcons[key]}</svg>`;
+    const card1 = document.createElement('div');
+    card1.className = 'start-template-card';
+    card1.innerHTML = icon + `<div class="start-template-card-name">${noteTemplates[key].label}</div>`;
+    card1.addEventListener('click', () => { newDocumentWithTemplate(key); hideStartScreen(); });
+    startGrid.appendChild(card1);
+
+    const card2 = document.createElement('div');
+    card2.className = 'template-card';
+    card2.innerHTML = icon + `<div class="template-card-name">${noteTemplates[key].label}</div>`;
+    card2.addEventListener('click', () => { newDocumentWithTemplate(key); closeBackstage(); });
+    backstageGrid.appendChild(card2);
+  });
+}
+buildTemplateGrids();
+
+/* ================================================================ */
+/* STARTSEITE LOGIK                                                  */
+/* ================================================================ */
+function showStartScreen() {
+  renderRecentDocs();
+  startScreen.classList.remove('hidden');
+}
+function hideStartScreen() {
+  startScreen.classList.add('hidden');
+  if (workspace.children.length === 0) {
+    newDocumentWithTemplate('leer');
+  }
+}
+
+document.getElementById('btn-home').addEventListener('click', showStartScreen);
+document.getElementById('start-new-blank').addEventListener('click', () => {
+  newDocumentWithTemplate('leer');
+  hideStartScreen();
+});
+document.getElementById('start-open-btn').addEventListener('click', () => fileInput.click());
+
+function getRecentDocs() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+function addRecentDoc(name) {
+  let list = getRecentDocs().filter(n => n !== name);
+  list.unshift(name);
+  list = list.slice(0, 8);
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch (e) {}
+}
+function renderRecentDocs() {
+  const list = getRecentDocs();
+  const container = document.getElementById('start-recent-list');
+  container.innerHTML = '';
+  if (list.length === 0) {
+    container.innerHTML = '<div class="start-recent-empty">Noch keine Dokumente gespeichert.</div>';
+    return;
+  }
+  list.forEach(name => {
+    const item = document.createElement('div');
+    item.className = 'start-recent-item';
+    item.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg><span>${name}</span>`;
+    item.title = 'Bitte über "Öffnen" erneut auswählen (aus Sicherheitsgründen kann der Browser Dateien nicht automatisch laden)';
+    item.addEventListener('click', () => fileInput.click());
+    container.appendChild(item);
+  });
+}
+
+/* ================================================================ */
+/* MEHRSEITEN-VERWALTUNG                                             */
+/* ================================================================ */
+function createPage(initialHtml) {
+  pageCounter++;
+  const page = document.createElement('div');
+  page.className = 'document-page';
+  page.id = 'page-' + pageCounter;
+  page.contentEditable = 'true';
+  page.spellcheck = false; /* eigene Rechtschreibprüfung übernimmt das */
+  page.innerHTML = initialHtml !== undefined ? initialHtml : '<p><br></p>';
+  const tag = document.createElement('div');
+  tag.className = 'page-number-tag';
+  tag.textContent = 'Seite ' + (workspace.querySelectorAll('.document-page').length + 1);
+  page.appendChild(tag);
+  attachPageEvents(page);
+  return page;
+}
+
+function attachPageEvents(page) {
+  page.addEventListener('mouseup', saveSelectionRange);
+  page.addEventListener('keyup', () => { saveSelectionRange(); scheduleSpellcheck(page); updateCounters(); });
+  page.addEventListener('input', () => {
+    updateCounters();
+    currentMetadata.lastModified = new Date().toISOString();
+    saveSelectionRange();
+    scheduleSpellcheck(page);
+  });
+  page.addEventListener('focus', () => { activePage = page; });
+  page.addEventListener('click', (e) => {
+    activePage = page;
+    handleEditorClick(e, page);
+  });
+  page.addEventListener('keydown', (e) => {
+    const ctrlOrCmd = e.ctrlKey || e.metaKey;
+    if (ctrlOrCmd && e.key === 'Enter') {
+      e.preventDefault();
+      insertNewPageAfter(page);
+    }
+  });
+}
+
+let activePage = null;
+
+function refreshPageLabels() {
+  const pages = workspace.querySelectorAll('.document-page');
+  pages.forEach((p, i) => {
+    const tag = p.querySelector('.page-number-tag');
+    if (tag) tag.textContent = 'Seite ' + (i + 1);
+  });
+  pageCountEl.textContent = 'Seiten: ' + pages.length;
+  document.getElementById('meta-pages').textContent = pages.length;
+}
+
+function insertNewPageAfter(referencePage) {
+  const newPage = createPage('<p><br></p>');
+  if (referencePage && referencePage.nextSibling) {
+    workspace.insertBefore(newPage, referencePage.nextSibling);
+  } else {
+    workspace.appendChild(newPage);
+  }
+  refreshPageLabels();
+  newPage.focus();
+  activePage = newPage;
+  showStatus('Neue Seite eingefügt');
+}
+
+document.getElementById('btn-insert-page').addEventListener('mousedown', (e) => e.preventDefault());
+document.getElementById('btn-insert-page').addEventListener('click', () => {
+  insertNewPageAfter(activePage || workspace.lastElementChild);
+});
+document.getElementById('btn-add-page-float').addEventListener('click', () => {
+  insertNewPageAfter(activePage || workspace.lastElementChild);
+});
+document.getElementById('btn-insert-pagebreak').addEventListener('mousedown', (e) => e.preventDefault());
+document.getElementById('btn-insert-pagebreak').addEventListener('click', () => {
+  insertNewPageAfter(activePage || workspace.lastElementChild);
+});
+
+function newDocumentWithTemplate(typeKey) {
+  workspace.innerHTML = '';
+  pageCounter = 0;
+  const template = noteTemplates[typeKey] || noteTemplates.leer;
+  const page = createPage(template.html);
+  workspace.appendChild(page);
+  refreshPageLabels();
+  currentNoteType = typeKey === 'leer' ? '' : typeKey;
+  noteTypeSelect.value = typeKey === 'leer' ? '' : typeKey;
+  noteTypeInfoEl.textContent = 'Typ: ' + template.label;
+  docTitleInput.value = 'Unbenanntes Dokument.note';
+  currentMetadata = { created: new Date().toISOString(), lastModified: new Date().toISOString() };
+  updateCounters();
+  activePage = page;
+  page.focus();
+  showStatus('Dokument "' + template.label + '" erstellt');
+}
+
+function loadPagesFromHtmlArray(pagesHtml) {
+  workspace.innerHTML = '';
+  pageCounter = 0;
+  pagesHtml.forEach(html => {
+    const page = createPage(html);
+    workspace.appendChild(page);
+  });
+  refreshPageLabels();
+  activePage = workspace.querySelector('.document-page');
+}
+
+function getAllPagesHtml() {
+  const pages = Array.from(workspace.querySelectorAll('.document-page'));
+  return pages.map(p => {
+    const clone = p.cloneNode(true);
+    const tag = clone.querySelector('.page-number-tag');
+    if (tag) tag.remove();
+    clone.querySelectorAll('.spell-error').forEach(el => {
+      el.replaceWith(document.createTextNode(el.textContent));
+    });
+    return clone.innerHTML;
+  });
+}
+
+/* Ribbon-Tab "Notiztyp wählen" darf bei bestehendem Inhalt Seiten ersetzen */
+noteTypeSelect.addEventListener('mousedown', saveSelectionRange);
+noteTypeSelect.addEventListener('change', () => {
+  const value = noteTypeSelect.value;
+  if (!value) return;
+  const hasContent = getAllPagesHtml().join('').replace(/<[^>]*>/g, '').trim().length > 0;
+  if (hasContent && !confirm('Der aktuelle Inhalt wird durch die Vorlage ersetzt. Fortfahren?')) {
+    noteTypeSelect.value = currentNoteType || '';
+    return;
+  }
+  newDocumentWithTemplate(value);
+});
+
+/* ================================================================ */
+/* SELECTION / FOKUS-ERHALT                                          */
+/* ================================================================ */
+function saveSelectionRange() {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {
+    const node = sel.anchorNode;
+    const page = node && node.nodeType === 1 ? node.closest('.document-page') : (node ? node.parentElement && node.parentElement.closest('.document-page') : null);
+    if (page) {
+      savedRange = sel.getRangeAt(0).cloneRange();
+      activePage = page;
+    }
+  }
+}
+
+function restoreSelectionRange() {
+  if (savedRange) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+  }
+}
+
+/* Alle interaktiven Steuerelemente der Ribbon-Leiste dürfen dem
+   Editor niemals den Fokus / die Selection entziehen. */
+document.querySelectorAll('.ribbon-content button, .ribbon-content select, .ribbon-content input, .header-actions button').forEach(el => {
+  el.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    restoreSelectionRange();
+  });
+});
+
+/* ================================================================ */
+/* RIBBON TABS (DYNAMISCH)                                           */
+/* ================================================================ */
+const ribbonTabs = document.querySelectorAll('.ribbon-tab');
+const ribbonPanels = document.querySelectorAll('.ribbon-content');
+
+ribbonTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.getAttribute('data-tab');
+    if (target === 'file') { openBackstage(); return; }
+    ribbonTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    ribbonPanels.forEach(panel => panel.classList.toggle('active', panel.getAttribute('data-panel') === target));
+  });
+});
+
+/* ================================================================ */
+/* TEXTFORMATIERUNG                                                  */
+/* ================================================================ */
+const formatButtons = document.querySelectorAll('[data-command]');
+formatButtons.forEach(button => {
+  button.addEventListener('mousedown', (e) => { e.preventDefault(); restoreSelectionRange(); });
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    const command = button.getAttribute('data-command');
+    if (activePage) activePage.focus();
+    document.execCommand(command, false, null);
+    saveSelectionRange();
+    updateActiveStates();
+    updateCounters();
+  });
+});
+
+function updateActiveStates() {
+  formatButtons.forEach(button => {
+    const command = button.getAttribute('data-command');
+    try {
+      button.classList.toggle('active', document.queryCommandState(command));
+    } catch (err) {}
+  });
+}
+document.addEventListener('selectionchange', () => {
+  if (activePage && document.activeElement === activePage) updateActiveStates();
+});
+
+document.getElementById('btn-highlight').addEventListener('mousedown', (e) => { e.preventDefault(); restoreSelectionRange(); });
+document.getElementById('btn-highlight').addEventListener('click', () => {
+  if (activePage) activePage.focus();
+  document.execCommand('hiliteColor', false, highlightColorInput.value);
+  saveSelectionRange();
+});
+
+document.getElementById('btn-undo').addEventListener('mousedown', (e) => e.preventDefault());
+document.getElementById('btn-undo').addEventListener('click', () => { if (activePage) activePage.focus(); document.execCommand('undo'); });
+document.getElementById('btn-redo').addEventListener('mousedown', (e) => e.preventDefault());
+document.getElementById('btn-redo').addEventListener('click', () => { if (activePage) activePage.focus(); document.execCommand('redo'); });
+
+/* ================================================================ */
+/* SCHRIFTART / SCHRIFTGRÖSSE / FARBEN                                */
+/* ================================================================ */
+fontSelect.addEventListener('mousedown', saveSelectionRange);
+fontSelect.addEventListener('change', () => {
+  restoreSelectionRange();
+  if (activePage) activePage.focus();
+  document.execCommand('fontName', false, fontSelect.value);
+  saveSelectionRange();
+  showStatus('Schriftart geändert: ' + fontSelect.value);
+});
+
+fontSizeSelect.addEventListener('mousedown', saveSelectionRange);
+fontSizeSelect.addEventListener('change', () => {
+  restoreSelectionRange();
+  if (activePage) activePage.focus();
+  const ptSize = fontSizeSelect.value;
+  document.execCommand('fontSize', false, '7');
+  const scope = activePage || document;
+  scope.querySelectorAll('font[size="7"]').forEach(el => {
+    el.removeAttribute('size');
+    el.style.fontSize = ptSize + 'pt';
+  });
+  saveSelectionRange();
+  showStatus('Schriftgröße geändert: ' + ptSize + 'pt');
+});
+
+textColorInput.addEventListener('mousedown', saveSelectionRange);
+textColorInput.addEventListener('input', () => {
+  restoreSelectionRange();
+  if (activePage) activePage.focus();
+  document.execCommand('foreColor', false, textColorInput.value);
+  saveSelectionRange();
+});
+
+/* ================================================================ */
+/* LOCAL FONT ACCESS API                                             */
+/* ================================================================ */
+btnLocalFont.addEventListener('click', async () => {
+  if (!('queryLocalFonts' in window)) {
+    alert('Die Local Font Access API wird von diesem Browser nicht unterstützt. Sie funktioniert derzeit nur in Chromium-basierten Browsern (z. B. Chrome, Edge) über HTTPS oder localhost.');
+    return;
+  }
+  try {
+    const availableFonts = await window.queryLocalFonts();
+    const familySet = new Set();
+    availableFonts.forEach(fontData => familySet.add(fontData.family));
+    const sortedFamilies = Array.from(familySet).sort((a, b) => a.localeCompare(b));
+    const separator = document.createElement('option');
+    separator.disabled = true;
+    separator.textContent = '── Lokale Schriftarten ──';
+    fontSelect.appendChild(separator);
+    sortedFamilies.forEach(family => {
+      const option = document.createElement('option');
+      option.value = family;
+      option.textContent = family;
+      fontSelect.appendChild(option);
+    });
+    showStatus(sortedFamilies.length + ' lokale Schriftarten geladen');
+  } catch (err) {
+    console.error(err);
+    if (err.name === 'SecurityError' || err.name === 'NotAllowedError') {
+      alert('Zugriff auf lokale Schriftarten wurde verweigert. Bitte erlaube den Zugriff im Berechtigungsdialog des Browsers.');
+    } else {
+      alert('Beim Laden der lokalen Schriftarten ist ein Fehler aufgetreten: ' + err.message);
+    }
+  }
+});
+
+/* ================================================================ */
+/* RECHTSCHREIBPRÜFUNG (client-seitiges Wörterbuch, deutsch/englisch) */
+/* ================================================================ */
+/* Ein kompaktes, eingebettetes Grundwörterbuch dient als Basis; alles was
+   nicht bekannt ist UND nicht wie ein Eigenname / eine Zahl aussieht, wird
+   markiert. Das ist eine Heuristik-Rechtschreibprüfung ohne Server-Anbindung. */
+const dictionaryWords = new Set(`der die das und ist sind war waren ich du er sie es wir ihr sein haben werden können müssen sollen wollen mögen
+dürfen nicht auch aber oder wenn dann als wie was wer wo warum wieso weshalb hier dort heute morgen gestern jetzt schon noch immer nie
+wieder sehr viel wenig mehr weniger gut schlecht groß klein neu alt jung schön hässlich mit von zu bei nach aus für gegen ohne um
+durch über unter zwischen an auf in vor hinter neben während wegen trotz statt bis seit
+ein eine einen einem einer eines kein keine keinen keinem keiner keines mein meine meinen meinem meiner deine dein sein seine ihr ihre
+unser unsere euer eure der die das des dem den diese dieser dieses jene jener jenes
+haus auto baum wasser feuer erde luft mensch frau mann kind familie freund arbeit zeit jahr tag woche monat stunde minute sekunde
+geld schule universität buch stift papier computer telefon internet stadt land welt leben liebe glück traum hoffnung
+notiz dokument text wort satz seite kapitel titel überschrift absatz format schrift farbe größe tabelle bild datei ordner
+speichern öffnen drucken bearbeiten löschen einfügen kopieren ausschneiden exportieren importieren
+projekt team meeting besprechung termin aufgabe idee plan ziel ergebnis lösung problem frage antwort
+hallo danke bitte willkommen entschuldigung tschüss guten tag abend nacht morgen
+the a an and or but if then when where why how what who is are was were be been being
+have has had do does did will would can could shall should may might must
+this that these those here there now then today yesterday tomorrow
+good bad big small new old young beautiful ugly with from to at by after out for against without
+computer internet phone book paper pen document file folder table image color format
+save open print edit delete insert copy cut export import
+project team meeting task idea plan goal result solution problem question answer
+amber note wort ambernote pdf docx json html css javascript`.split(/\s+/).filter(Boolean));
+
+function isLikelyMisspelled(word) {
+  const clean = word.toLowerCase().replace(/[.,!?;:()"'„“”]/g, '');
+  if (clean.length < 3) return false;
+  if (/^\d+$/.test(clean)) return false;
+  if (/^[A-ZÄÖÜ]/.test(word) && word.length > 1) return false; /* Eigennamen/Satzanfang tolerieren */
+  return !dictionaryWords.has(clean);
+}
+
+let spellcheckTimers = new WeakMap();
+function scheduleSpellcheck(page) {
+  if (!spellcheckEnabled) return;
+  clearTimeout(spellcheckTimers.get(page));
+  spellcheckTimers.set(page, setTimeout(() => runSpellcheck(page), 700));
+}
+
+function runSpellcheck(page) {
+  if (!spellcheckEnabled) return;
+  saveSelectionRange();
+  const walker = document.createTreeWalker(page, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => {
+      if (node.parentElement && node.parentElement.closest('.page-number-tag')) return NodeFilter.FILTER_REJECT;
+      if (node.parentElement && node.parentElement.classList.contains('spell-error')) return NodeFilter.FILTER_ACCEPT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const textNodes = [];
+  let n;
+  while ((n = walker.nextNode())) textNodes.push(n);
+
+  textNodes.forEach(node => {
+    const text = node.textContent;
+    if (!text || !text.trim()) return;
+    const parent = node.parentElement;
+    if (parent && parent.classList.contains('spell-error') && text === parent.textContent) return;
+
+    const words = text.split(/(\s+)/);
+    let anyMisspelled = false;
+    words.forEach(w => { if (w.trim() && isLikelyMisspelled(w)) anyMisspelled = true; });
+    if (!anyMisspelled) return;
+
+    const frag = document.createDocumentFragment();
+    words.forEach(w => {
+      if (w.trim() && isLikelyMisspelled(w)) {
+        const span = document.createElement('span');
+        span.className = 'spell-error';
+        span.textContent = w;
+        frag.appendChild(span);
+      } else {
+        frag.appendChild(document.createTextNode(w));
+      }
+    });
+    node.replaceWith(frag);
+  });
+  restoreSelectionRange();
+}
+
+let spellMenuEl = null;
+document.addEventListener('contextmenu', (e) => {
+  const target = e.target;
+  if (target.classList && target.classList.contains('spell-error')) {
+    e.preventDefault();
+    showSpellMenu(e.clientX, e.clientY, target);
+  } else if (spellMenuEl) {
+    closeSpellMenu();
+  }
+});
+document.addEventListener('click', (e) => {
+  if (spellMenuEl && !spellMenuEl.contains(e.target)) closeSpellMenu();
+});
+
+function closeSpellMenu() {
+  if (spellMenuEl) { spellMenuEl.remove(); spellMenuEl = null; }
+}
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m + 1}, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+
+function getSuggestions(word) {
+  const clean = word.toLowerCase().replace(/[.,!?;:()"'„“”]/g, '');
+  const candidates = Array.from(dictionaryWords)
+    .map(w => ({ w, dist: levenshtein(clean, w) }))
+    .filter(o => o.dist <= 2)
+    .sort((a, b) => a.dist - b.dist)
+    .slice(0, 4)
+    .map(o => o.w);
+  return candidates;
+}
+
+function showSpellMenu(x, y, spanEl) {
+  closeSpellMenu();
+  const word = spanEl.textContent;
+  const suggestions = getSuggestions(word);
+  spellMenuEl = document.createElement('div');
+  spellMenuEl.className = 'spell-menu';
+  spellMenuEl.style.left = x + 'px';
+  spellMenuEl.style.top = y + 'px';
+
+  if (suggestions.length === 0) {
+    const noSug = document.createElement('div');
+    noSug.className = 'spell-menu-item';
+    noSug.style.color = '#999';
+    noSug.textContent = 'Keine Vorschläge';
+    spellMenuEl.appendChild(noSug);
+  } else {
+    suggestions.forEach(sug => {
+      const item = document.createElement('div');
+      item.className = 'spell-menu-item';
+      item.textContent = sug;
+      item.addEventListener('click', () => {
+        spanEl.replaceWith(document.createTextNode(sug + ' '));
+        closeSpellMenu();
+        updateCounters();
+      });
+      spellMenuEl.appendChild(item);
+    });
+  }
+  const sep = document.createElement('div');
+  sep.className = 'spell-menu-sep';
+  spellMenuEl.appendChild(sep);
+
+  const ignoreItem = document.createElement('div');
+  ignoreItem.className = 'spell-menu-item';
+  ignoreItem.textContent = 'Ignorieren';
+  ignoreItem.addEventListener('click', () => {
+    spanEl.replaceWith(document.createTextNode(spanEl.textContent));
+    closeSpellMenu();
+  });
+  spellMenuEl.appendChild(ignoreItem);
+
+  const addDictItem = document.createElement('div');
+  addDictItem.className = 'spell-menu-item';
+  addDictItem.textContent = 'Zum Wörterbuch hinzufügen';
+  addDictItem.addEventListener('click', () => {
+    dictionaryWords.add(word.toLowerCase().replace(/[.,!?;:()"'„“”]/g, ''));
+    document.querySelectorAll('.spell-error').forEach(el => {
+      if (el.textContent.toLowerCase().trim() === word.toLowerCase().trim()) {
+        el.replaceWith(document.createTextNode(el.textContent));
+      }
+    });
+    closeSpellMenu();
+  });
+  spellMenuEl.appendChild(addDictItem);
+
+  document.body.appendChild(spellMenuEl);
+}
+
+btnSpellToggle.addEventListener('click', () => {
+  spellcheckEnabled = !spellcheckEnabled;
+  btnSpellToggle.classList.toggle('spellcheck-off', !spellcheckEnabled);
+  if (!spellcheckEnabled) {
+    document.querySelectorAll('.spell-error').forEach(el => el.replaceWith(document.createTextNode(el.textContent)));
+    showStatus('Rechtschreibprüfung deaktiviert');
+  } else {
+    document.querySelectorAll('.document-page').forEach(p => scheduleSpellcheck(p));
+    showStatus('Rechtschreibprüfung aktiviert');
+  }
+});
+
+/* ================================================================ */
+/* EDITOR-KLICKS: BILDER SELEKTIEREN, TABELLEN ÖFFNEN                */
+/* ================================================================ */
+function handleEditorClick(e, page) {
+  const imgWrap = e.target.closest ? e.target.closest('.img-wrap') : null;
+  if (imgWrap) {
+    selectImage(imgWrap);
+  } else {
+    deselectImage();
+  }
+
+  const table = e.target.closest ? e.target.closest('.doc-table') : null;
+  if (table) {
+    e.preventDefault();
+    openExcelEditorForTable(table);
+  }
+}
+
+/* ---------------- BILDER MIT RESIZE-HANDLES ---------------- */
+function insertImageAtCursor(dataUrl, naturalWidth, naturalHeight) {
+  if (activePage) activePage.focus();
+  restoreSelectionRange();
+  const maxWidth = 500;
+  const scale = naturalWidth > maxWidth ? maxWidth / naturalWidth : 1;
+  const w = Math.round(naturalWidth * scale);
+  const h = Math.round(naturalHeight * scale);
+
+  const wrapId = 'imgwrap-' + Date.now();
+  const html = `<span class="img-wrap" id="${wrapId}" contenteditable="false" data-x="0" data-y="0" data-w="${w}" data-h="${h}">
+    <img src="${dataUrl}" style="width:${w}px;height:${h}px;">
+    <span class="resize-handle tl"></span><span class="resize-handle tr"></span>
+    <span class="resize-handle bl"></span><span class="resize-handle br"></span>
+  </span>&nbsp;`;
+  document.execCommand('insertHTML', false, html);
+  setTimeout(() => {
+    const wrapEl = document.getElementById(wrapId);
+    if (wrapEl) attachImageResizeEvents(wrapEl);
+  }, 0);
+  updateCounters();
+}
+
+function attachImageResizeEvents(wrapEl) {
+  const img = wrapEl.querySelector('img');
+  wrapEl.querySelectorAll('.resize-handle').forEach(handle => {
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      selectImage(wrapEl);
+      const startX = e.clientX, startY = e.clientY;
+      const startW = img.offsetWidth, startH = img.offsetHeight;
+      const corner = handle.classList.contains('tl') ? 'tl' : handle.classList.contains('tr') ? 'tr' : handle.classList.contains('bl') ? 'bl' : 'br';
+
+      function onMove(ev) {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        let newW = startW, newH = startH;
+        if (corner === 'br') { newW = startW + dx; newH = startH + dy; }
+        else if (corner === 'bl') { newW = startW - dx; newH = startH + dy; }
+        else if (corner === 'tr') { newW = startW + dx; newH = startH - dy; }
+        else if (corner === 'tl') { newW = startW - dx; newH = startH - dy; }
+        newW = Math.max(30, newW);
+        newH = Math.max(30, newH);
+        img.style.width = newW + 'px';
+        img.style.height = newH + 'px';
+        wrapEl.setAttribute('data-w', Math.round(newW));
+        wrapEl.setAttribute('data-h', Math.round(newH));
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        const rect = wrapEl.getBoundingClientRect();
+        const pageRect = wrapEl.closest('.document-page').getBoundingClientRect();
+        wrapEl.setAttribute('data-x', Math.round(rect.left - pageRect.left));
+        wrapEl.setAttribute('data-y', Math.round(rect.top - pageRect.top));
+        updateCounters();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+}
+
+function selectImage(wrapEl) {
+  deselectImage();
+  wrapEl.classList.add('selected');
+  activeImageWrap = wrapEl;
+}
+function deselectImage() {
+  if (activeImageWrap) activeImageWrap.classList.remove('selected');
+  activeImageWrap = null;
+}
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && activeImageWrap && document.activeElement !== document.body) {
+    /* nur löschen, wenn Bild explizit selektiert ist und kein Texteingabefeld fokussiert ist */
+  }
+});
+
+/* Für Bilder, die aus gespeicherten Dokumenten geladen werden: Events erneut anhängen */
+function rebindAllImageEvents() {
+  document.querySelectorAll('.img-wrap').forEach(wrapEl => attachImageResizeEvents(wrapEl));
+}
+
+/* ================================================================ */
+/* TABELLEN: NICHT DIREKT EDITIERBAR, KLICK ÖFFNET EXCEL-FENSTER      */
+/* ================================================================ */
+let tableIdCounter = 0;
+
+function insertNewTable(rows, cols) {
+  if (activePage) activePage.focus();
+  restoreSelectionRange();
+  tableIdCounter++;
+  const tableId = 'tbl-' + tableIdCounter;
+  const data = Array.from({length: rows}, () => Array.from({length: cols}, () => ''));
+  const html = buildDocTableHtml(tableId, data) + '<p><br></p>';
+  document.execCommand('insertHTML', false, html);
+  updateCounters();
+  showStatus('Tabelle eingefügt – zum Bearbeiten anklicken');
+}
+
+function buildDocTableHtml(tableId, data) {
+  let html = `<table class="doc-table" id="${tableId}" contenteditable="false" data-tabledata='${encodeURIComponent(JSON.stringify(data))}'>`;
+  data.forEach(row => {
+    html += '<tr>';
+    row.forEach(cell => { html += `<td>${cell ? escapeHtml(cell) : '&nbsp;'}</td>`; });
+    html += '</tr>';
+  });
+  html += '</table>';
+  return html;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function openExcelEditorForTable(tableEl) {
+  activeTableForEdit = tableEl;
+  let data;
+  try {
+    data = JSON.parse(decodeURIComponent(tableEl.getAttribute('data-tabledata') || '[]'));
+  } catch (e) {
+    data = [['']];
+  }
+  if (!data || data.length === 0) data = [['']];
+  renderExcelGrid(data);
+  excelOverlay.classList.add('open');
+}
+
+function renderExcelGrid(data) {
+  excelGrid.innerHTML = '';
+  const cols = data[0] ? data[0].length : 1;
+
+  const headRow = document.createElement('tr');
+  headRow.appendChild(document.createElement('th'));
+  for (let c = 0; c < cols; c++) {
+    const th = document.createElement('th');
+    th.textContent = String.fromCharCode(65 + (c % 26));
+    headRow.appendChild(th);
+  }
+  excelGrid.appendChild(headRow);
+
+  data.forEach((row, r) => {
+    const tr = document.createElement('tr');
+    const rowHead = document.createElement('td');
+    rowHead.className = 'rowhead';
+    rowHead.textContent = r + 1;
+    tr.appendChild(rowHead);
+    row.forEach((cellVal, c) => {
+      const td = document.createElement('td');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = cellVal || '';
+      input.dataset.row = r;
+      input.dataset.col = c;
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+    excelGrid.appendChild(tr);
+  });
+}
+
+function readExcelGridData() {
+  const rows = Array.from(excelGrid.querySelectorAll('tr')).slice(1);
+  return rows.map(tr => {
+    const inputs = Array.from(tr.querySelectorAll('td input'));
+    return inputs.map(inp => inp.value);
+  });
+}
+
+document.getElementById('btn-insert-table').addEventListener('mousedown', (e) => { e.preventDefault(); restoreSelectionRange(); });
+document.getElementById('btn-insert-table').addEventListener('click', () => {
+  const rows = parseInt(prompt('Anzahl Zeilen:', '3'), 10) || 3;
+  const cols = parseInt(prompt('Anzahl Spalten:', '3'), 10) || 3;
+  insertNewTable(Math.max(1, rows), Math.max(1, cols));
+});
+
+document.getElementById('excel-close-btn').addEventListener('click', closeExcelEditor);
+document.getElementById('excel-cancel').addEventListener('click', closeExcelEditor);
+function closeExcelEditor() {
+  excelOverlay.classList.remove('open');
+  activeTableForEdit = null;
+}
+
+document.getElementById('excel-apply').addEventListener('click', () => {
+  if (!activeTableForEdit) return closeExcelEditor();
+  const data = readExcelGridData();
+  const newTableId = activeTableForEdit.id;
+  const newHtml = buildDocTableHtml(newTableId, data);
+  const temp = document.createElement('div');
+  temp.innerHTML = newHtml;
+  const newTableEl = temp.firstElementChild;
+  activeTableForEdit.replaceWith(newTableEl);
+  closeExcelEditor();
+  updateCounters();
+  showStatus('Tabelle aktualisiert');
+});
+
+document.getElementById('excel-add-row').addEventListener('click', () => {
+  const data = readExcelGridData();
+  const cols = data[0] ? data[0].length : 1;
+  data.push(new Array(cols).fill(''));
+  renderExcelGrid(data);
+});
+document.getElementById('excel-add-col').addEventListener('click', () => {
+  const data = readExcelGridData();
+  data.forEach(row => row.push(''));
+  if (data.length === 0) data.push(['']);
+  renderExcelGrid(data);
+});
+document.getElementById('excel-del-row').addEventListener('click', () => {
+  const data = readExcelGridData();
+  if (data.length > 1) data.pop();
+  renderExcelGrid(data);
+});
+document.getElementById('excel-del-col').addEventListener('click', () => {
+  const data = readExcelGridData();
+  if (data[0] && data[0].length > 1) data.forEach(row => row.pop());
+  renderExcelGrid(data);
+});
+
+/* ================================================================ */
+/* EINFÜGEN-TAB: LINK, DATUM, CHECKBOX, BILD                         */
+/* ================================================================ */
+document.getElementById('btn-insert-link').addEventListener('mousedown', (e) => { e.preventDefault(); restoreSelectionRange(); });
+document.getElementById('btn-insert-link').addEventListener('click', () => {
+  if (activePage) activePage.focus();
+  const url = prompt('Link-URL eingeben:');
+  if (url) document.execCommand('createLink', false, url);
+  updateCounters();
+});
+
+document.getElementById('btn-insert-date').addEventListener('mousedown', (e) => { e.preventDefault(); restoreSelectionRange(); });
+document.getElementById('btn-insert-date').addEventListener('click', () => {
+  if (activePage) activePage.focus();
+  document.execCommand('insertText', false, new Date().toLocaleDateString('de-DE'));
+  updateCounters();
+});
+
+document.getElementById('btn-insert-checkbox').addEventListener('mousedown', (e) => { e.preventDefault(); restoreSelectionRange(); });
+document.getElementById('btn-insert-checkbox').addEventListener('click', () => {
+  if (activePage) activePage.focus();
+  document.execCommand('insertHTML', false, '<input type="checkbox" style="margin-right:6px;">');
+  updateCounters();
+});
+
+document.getElementById('btn-insert-image-file').addEventListener('mousedown', (e) => { e.preventDefault(); restoreSelectionRange(); });
+document.getElementById('btn-insert-image-file').addEventListener('click', () => imgFileInput.click());
+imgFileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const dataUrl = ev.target.result;
+    const tempImg = new Image();
+    tempImg.onload = () => {
+      insertImageAtCursor(dataUrl, tempImg.naturalWidth, tempImg.naturalHeight);
+    };
+    tempImg.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+  imgFileInput.value = '';
+});
+
+/* ================================================================ */
+/* LAYOUT TAB                                                        */
+/* ================================================================ */
+document.getElementById('btn-margin-narrow').addEventListener('click', () => { setAllPagesStyle('padding', '30px 35px'); showStatus('Schmale Ränder angewendet'); });
+document.getElementById('btn-margin-normal').addEventListener('click', () => { setAllPagesStyle('padding', '60px 70px'); showStatus('Normale Ränder angewendet'); });
+document.getElementById('btn-margin-wide').addEventListener('click', () => { setAllPagesStyle('padding', '60px 120px'); showStatus('Breite Ränder angewendet'); });
+document.getElementById('btn-linespacing-1').addEventListener('click', () => { setAllPagesStyle('lineHeight', '1.3'); showStatus('Zeilenabstand: 1.0'); });
+document.getElementById('btn-linespacing-15').addEventListener('click', () => { setAllPagesStyle('lineHeight', '1.8'); showStatus('Zeilenabstand: 1.5'); });
+document.getElementById('btn-linespacing-2').addEventListener('click', () => { setAllPagesStyle('lineHeight', '2.3'); showStatus('Zeilenabstand: 2.0'); });
+function setAllPagesStyle(prop, val) {
+  document.querySelectorAll('.document-page').forEach(p => { p.style[prop] = val; });
+}
+
+/* ================================================================ */
+/* VIEW TAB                                                          */
+/* ================================================================ */
+function applyZoom() {
+  document.querySelectorAll('.document-page').forEach(p => {
+    p.style.transform = 'scale(' + (currentZoom / 100) + ')';
+    p.style.transformOrigin = 'top center';
+  });
+}
+document.getElementById('btn-zoom-in').addEventListener('click', () => { currentZoom = Math.min(200, currentZoom + 10); applyZoom(); showStatus('Zoom: ' + currentZoom + '%'); });
+document.getElementById('btn-zoom-out').addEventListener('click', () => { currentZoom = Math.max(50, currentZoom - 10); applyZoom(); showStatus('Zoom: ' + currentZoom + '%'); });
+document.getElementById('btn-zoom-reset').addEventListener('click', () => { currentZoom = 100; applyZoom(); showStatus('Zoom zurückgesetzt: 100%'); });
+
+let darkModeActive = false;
+document.getElementById('btn-toggle-dark').addEventListener('click', () => {
+  darkModeActive = !darkModeActive;
+  workspace.style.backgroundColor = darkModeActive ? '#3a3a3a' : '';
+  showStatus(darkModeActive ? 'Dunkler Editorbereich aktiviert' : 'Dunkler Editorbereich deaktiviert');
+});
+
+document.getElementById('btn-show-shortcuts').addEventListener('click', showShortcutsDialog);
+document.getElementById('btn-status-shortcuts').addEventListener('click', showShortcutsDialog);
+function showShortcutsDialog() {
+  const list = [
+    ['Strg + S', 'Speichern'],
+    ['Strg + O', 'Öffnen'],
+    ['Strg + P', 'Drucken'],
+    ['Strg + B', 'Fett'],
+    ['Strg + I', 'Kursiv'],
+    ['Strg + U', 'Unterstrichen'],
+    ['Strg + Z', 'Rückgängig'],
+    ['Strg + Y', 'Wiederholen'],
+    ['Strg + L / E / R / J', 'Ausrichtung links / zentriert / rechts / Blocksatz'],
+    ['Strg + Enter', 'Neue Seite einfügen'],
+    ['Entf (Bild selektiert)', 'Bild löschen'],
+    ['Esc', 'Overlay / Dialog schließen']
+  ];
+  let html = '<table class="meta-table shortcuts-list">';
+  list.forEach(([keys, desc]) => { html += `<tr><td>${keys}</td><td>${desc}</td></tr>`; });
+  html += '</table>';
+  const w = window.open('', '_blank', 'width=480,height=520');
+  w.document.write('<html><head><title>Tastenkombinationen – AmberNote</title><style>body{font-family:Segoe UI,sans-serif;padding:24px;color:#333;} h2{color:#D97706;margin-bottom:16px;} table{border-collapse:collapse;} td{padding:8px 14px;border-bottom:1px solid #eee;font-size:13px;} td:first-child{font-family:Consolas,monospace;background:#f2f2f2;border-radius:3px;}</style></head><body><h2>Tastenkombinationen</h2>' + html + '</body></html>');
+  w.document.close();
+}
+
+/* ================================================================ */
+/* METRIKEN                                                          */
+/* ================================================================ */
+function updateCounters() {
+  const pages = Array.from(workspace.querySelectorAll('.document-page'));
+  let chars = 0, words = 0;
+  pages.forEach(p => {
+    const text = p.innerText || '';
+    chars += text.length;
+    words += text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+  });
+  wordCountEl.textContent = `Wörter: ${words}`;
+  charCountEl.textContent = `Zeichen: ${chars}`;
+  document.getElementById('meta-words').textContent = words;
+  document.getElementById('meta-chars').textContent = chars;
+  refreshPageLabels();
+}
+
+/* ================================================================ */
+/* BACKSTAGE                                                          */
+/* ================================================================ */
+function openBackstage() {
+  refreshMetadataView();
+  backstageOverlay.classList.add('open');
+}
+function closeBackstage() {
+  backstageOverlay.classList.remove('open');
+  if (activePage) activePage.focus();
+}
+backstageCloseBtn.addEventListener('click', closeBackstage);
+backstageNavItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const section = item.getAttribute('data-section');
+    backstageNavItems.forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    backstageSections.forEach(panel => panel.classList.toggle('active', panel.getAttribute('data-section-panel') === section));
+    if (section === 'saveas') document.getElementById('saveas-filename').value = docTitleInput.value;
+  });
+});
+function refreshMetadataView() {
+  document.getElementById('meta-filename').textContent = docTitleInput.value;
+  document.getElementById('meta-notetype').textContent = currentNoteType ? noteTemplates[currentNoteType].label : 'Leer';
+  document.getElementById('meta-created').textContent = new Date(currentMetadata.created).toLocaleString('de-DE');
+  document.getElementById('meta-modified').textContent = new Date(currentMetadata.lastModified).toLocaleString('de-DE');
+  updateCounters();
+}
+document.getElementById('backstage-new-blank').addEventListener('click', () => { triggerNewDocument(); closeBackstage(); });
+document.getElementById('backstage-open-tile').addEventListener('click', () => fileInput.click());
+document.getElementById('backstage-saveas-confirm').addEventListener('click', () => {
+  const name = document.getElementById('saveas-filename').value.trim();
+  docTitleInput.value = name || 'Unbenanntes Dokument.note';
+  saveNoteFile();
+  closeBackstage();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (backstageOverlay.classList.contains('open')) closeBackstage();
+    if (excelOverlay.classList.contains('open')) closeExcelEditor();
+    if (spellMenuEl) closeSpellMenu();
+  }
+});
+
+/* ================================================================ */
+/* DATEI-OPERATIONEN                                                 */
+/* ================================================================ */
+function triggerNewDocument() {
+  const hasContent = getAllPagesHtml().join('').replace(/<[^>]*>/g, '').trim().length > 0;
+  if (!hasContent || confirm('Möchtest du ein neues Dokument erstellen? Ungespeicherte Änderungen gehen verloren.')) {
+    newDocumentWithTemplate('leer');
+  }
+}
+document.getElementById('btn-new').addEventListener('click', triggerNewDocument);
+
+function saveNoteFile() {
+  let filename = docTitleInput.value.trim();
+  if (!filename.endsWith('.note')) { filename += '.note'; docTitleInput.value = filename; }
+
+  const pagesHtml = getAllPagesHtml();
+  const combinedText = pagesHtml.join(' ').replace(/<[^>]*>/g, ' ');
+  const words = combinedText.trim() === '' ? 0 : combinedText.trim().split(/\s+/).length;
+  const chars = combinedText.trim().length;
+
+  const noteData = {
+    metadata: {
+      title: filename,
+      noteType: currentNoteType || 'leer',
+      created: currentMetadata.created,
+      lastModified: new Date().toISOString(),
+      wordCount: words,
+      charCount: chars,
+      pageCount: pagesHtml.length,
+      appVersion: "3.0"
+    },
+    pages: pagesHtml
+  };
+
+  const jsonString = JSON.stringify(noteData, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  addRecentDoc(filename);
+  showStatus('Dokument erfolgreich gespeichert');
+}
+document.getElementById('btn-save').addEventListener('click', saveNoteFile);
+document.getElementById('btn-open').addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const parsed = JSON.parse(event.target.result);
+      let pagesHtml;
+      if (parsed.pages !== undefined) {
+        pagesHtml = parsed.pages;
+      } else if (parsed.content !== undefined) {
+        pagesHtml = [parsed.content]; /* Abwärtskompatibilität zu Version 1/2 */
+      } else {
+        throw new Error('Ungültiges Notiz-Format');
+      }
+
+      hideStartScreen();
+      loadPagesFromHtmlArray(pagesHtml);
+      rebindAllImageEvents();
+      docTitleInput.value = file.name;
+
+      if (parsed.metadata) {
+        currentMetadata = {
+          created: parsed.metadata.created || new Date().toISOString(),
+          lastModified: parsed.metadata.lastModified || new Date().toISOString()
+        };
+        currentNoteType = parsed.metadata.noteType && noteTemplates[parsed.metadata.noteType] ? parsed.metadata.noteType : '';
+        noteTypeSelect.value = currentNoteType;
+        noteTypeInfoEl.textContent = 'Typ: ' + (currentNoteType ? noteTemplates[currentNoteType].label : 'Leer');
+      } else {
+        currentMetadata = { created: new Date().toISOString(), lastModified: new Date().toISOString() };
+      }
+
+      updateCounters();
+      addRecentDoc(file.name);
+      showStatus(`Datei "${file.name}" geöffnet`);
+    } catch (err) {
+      alert('Fehler beim Laden der Datei. Es handelt sich nicht um eine gültige .note-Datei.');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+  fileInput.value = '';
+});
+
+/* ================================================================ */
+/* DRUCKEN                                                            */
+/* ================================================================ */
+document.getElementById('btn-print').addEventListener('click', () => window.print());
+
+/* ================================================================ */
+/* EXPORT: PDF & DOCX                                                */
+/* ================================================================ */
+document.getElementById('export-pdf-tile').addEventListener('click', async () => {
+  closeBackstage();
+  showStatus('PDF wird erstellt...');
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'pt', 'a4');
+    const pages = Array.from(workspace.querySelectorAll('.document-page'));
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = await html2canvas(pages[i], { scale: 2, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+      if (i > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, Math.min(imgHeight, pageHeight));
+    }
+    const filename = (docTitleInput.value.replace(/\.note$/, '') || 'Dokument') + '.pdf';
+    pdf.save(filename);
+    showStatus('PDF-Export abgeschlossen');
+  } catch (err) {
+    console.error(err);
+    alert('Beim PDF-Export ist ein Fehler aufgetreten: ' + err.message);
+  }
+});
+
+document.getElementById('export-docx-tile').addEventListener('click', async () => {
+  closeBackstage();
+  showStatus('Word-Dokument wird erstellt...');
+  try {
+    const { Document, Packer, Paragraph, TextRun, HeadingLevel, PageBreak } = window.docx;
+    const pages = Array.from(workspace.querySelectorAll('.document-page'));
+    const children = [];
+
+    pages.forEach((page, pIndex) => {
+      const blockElements = page.querySelectorAll('h1,h2,h3,p,li');
+      if (blockElements.length === 0) {
+        children.push(new Paragraph({ children: [new TextRun(page.innerText || '')] }));
+      } else {
+        blockElements.forEach(el => {
+          const text = el.innerText || '';
+          if (el.tagName === 'H1') children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_1 }));
+          else if (el.tagName === 'H2') children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_2 }));
+          else if (el.tagName === 'H3') children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_3 }));
+          else if (el.tagName === 'LI') children.push(new Paragraph({ text: '• ' + text }));
+          else children.push(new Paragraph({
+            children: [new TextRun({
+              text,
+              bold: !!el.querySelector('b, strong') || window.getComputedStyle(el).fontWeight >= 600,
+              italics: !!el.querySelector('i, em')
+            })]
+          }));
+        });
+      }
+      if (pIndex < pages.length - 1) {
+        children.push(new Paragraph({ children: [new PageBreak()] }));
+      }
+    });
+
+    const doc = new Document({ sections: [{ properties: {}, children }] });
+    const blob = await Packer.toBlob(doc);
+    const filename = (docTitleInput.value.replace(/\.note$/, '') || 'Dokument') + '.docx';
+    window.saveAs(blob, filename);
+    showStatus('Word-Export abgeschlossen');
+  } catch (err) {
+    console.error(err);
+    alert('Beim Word-Export ist ein Fehler aufgetreten: ' + err.message);
+  }
+});
+
+/* ================================================================ */
+/* TASTENKOMBINATIONEN (GLOBAL)                                      */
+/* ================================================================ */
+document.addEventListener('keydown', (e) => {
+  const ctrlOrCmd = e.ctrlKey || e.metaKey;
+  if (!ctrlOrCmd) return;
+  const key = e.key.toLowerCase();
+  if (key === 's') { e.preventDefault(); saveNoteFile(); }
+  else if (key === 'o') { e.preventDefault(); fileInput.click(); }
+  else if (key === 'p') { e.preventDefault(); window.print(); }
+  else if (key === 'l') { e.preventDefault(); document.execCommand('justifyLeft'); }
+  else if (key === 'e') { e.preventDefault(); document.execCommand('justifyCenter'); }
+  else if (key === 'r') { e.preventDefault(); document.execCommand('justifyRight'); }
+  else if (key === 'j') { e.preventDefault(); document.execCommand('justifyFull'); }
+});
+
+/* ================================================================ */
+/* UTILS                                                              */
+/* ================================================================ */
+function showStatus(message) {
+  statusMsgEl.textContent = message;
+  clearTimeout(showStatus._t);
+  showStatus._t = setTimeout(() => { statusMsgEl.textContent = 'Bereit'; }, 3000);
+}
+
+/* ================================================================ */
+/* INITIALISIERUNG                                                   */
+/* ================================================================ */
+showStartScreen();
+showStatus('AmberNote bereit');
+
+});
+</script>
+</body>
+</html>
+
